@@ -1,0 +1,49 @@
+CREATE DATABASE IF NOT EXISTS guns_meta;
+USE guns_meta;
+
+CREATE TABLE `users` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `login` VARCHAR(32) NOT NULL,
+  `email` VARCHAR(256) NOT NULL,
+  UNIQUE(`login`)
+);
+
+CREATE TABLE `hashes` (
+  `user_id` INT UNSIGNED NOT NULL PRIMARY KEY,
+  `hash` CHAR(64) NOT NULL,
+  `salt` CHAR(16) NOT NULL,
+  `rounds` INT UNSIGNED NOT NULL
+);
+
+CREATE TABLE `user_badges` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `user_id` INT UNSIGNED NOT NULL,
+  `badge_id` INT UNSIGNED NOT NULL,
+  INDEX(`user_id`), INDEX(`badge_id`)
+);
+
+CREATE TABLE `badges` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `desc` TEXT NOT NULL
+-- Needs more, but not right now.
+);
+
+CREATE TABLE `client_keys` (
+  `owner_id` INT UNSIGNED NOT NULL PRIMARY KEY,
+  `privkey` TEXT NOT NULL,
+  `pubkey` TEXT NOT NULL,
+  `generated` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX(`generated`)
+);
+
+CREATE TABLE `server_keys` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `owner_id` INT UNSIGNED NOT NULL,
+  `server_name` VARCHAR(64) NOT NULL,
+  `privkey` TEXT NOT NULL,
+  `pubkey` TEXT NOT NULL,
+  `generated` TIMESTAMP NOT NULL DEFAULT 0,
+  `token` CHAR(64) NOT NULL,
+  `token_generated` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX(`generated`), INDEX(`token_generated`), INDEX(`owner_id`)
+);
