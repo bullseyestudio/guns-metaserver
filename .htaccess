@@ -1,3 +1,5 @@
+Options -Indexes
+
 <ifmodule !mod_rewrite.c>
 	Order deny,allow
 	Deny from all
@@ -7,8 +9,8 @@
 <ifmodule mod_rewrite.c>
 	RewriteEngine on
 
-	RewriteCond {REQUEST_FILENAME} !-l
-	RewriteCond {REQUEST_FILENAME} !-d
-	RewriteCond {REQUEST_FILENAME} !-f
-	RewriteRule ^([a-zA-Z0-9_/]+)$ index.php?args=$1&sn=$SCRIPT_NAME [QSA,L]
+	RewriteCond %{REQUEST_FILENAME} !-f
+	RewriteCond %{REQUEST_FILENAME} !-d
+	RewriteCond %{REQUEST_FILENAME} !-l
+	RewriteRule ^([a-zA-Z0-9_/-]*)$ index.php?args=$1 [QSA,NS,L]
 </ifmodule>
