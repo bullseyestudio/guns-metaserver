@@ -7,6 +7,7 @@ if(!empty($_GET['args']))
 
 include('inc/config.inc');
 include('inc/sql.inc');
+include('inc/fmt.inc');
 
 define('PATH_BASE',  dirname(__FILE__));
 define('PATH_ACT',   PATH_BASE.'/act');
