@@ -6,4 +6,5 @@ if(!empty($_GET['args']))
 }
 
 include('inc/config.inc');
+include('inc/sql.inc');
 ?>
