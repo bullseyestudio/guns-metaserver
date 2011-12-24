@@ -3,24 +3,20 @@
 if(empty($_ARGS[1]))
 	die('Bad call to /forgot -- needs a token as first parameter.');
 
-$sth = $dbh->prepare('SELECT `u`.`login`, `t`.`generated` FROM `pw_tokens` AS `t`
-	LEFT JOIN `users` AS `u`
-		ON `u`.`id` = `t`.`user_id`
-	WHERE `token` = ?');
-$sth->execute(array($_ARGS[1]));
+$token = fetch_pw_reset($_ARGS[1]);
 
-$row = $sth->fetch(PDO::FETCH_ASSOC);
-$sth->closecursor();
+if(empty($token))
+	die('The password reset token "'.$_ARGS[1].'" no longer exists. This means someone (maybe you) has already used it to reset a password.');
 
-$login = $row['login'];
-$token_timestamp = strtotime($row['generated']);
+$login = $token['login'];
+$token_timestamp = strtotime($token['generated']);
 $token_age = time() - $token_timestamp;
 
 $token_date = date('Y-m-d H:i:s', $token_timestamp);
 
 $too_old = false;
-//if($token_age > 3600) # 3600 seconds == one hour
-//	$too_old = true;
+if($token_age > 3600) # 3600 seconds == one hour
+	$too_old = true;
 ?>
 <h1>Resetting password for <?PHP echo $login; ?>:</h1>
 
@@ -33,9 +29,25 @@ if(!empty($_POST['newpass']) and !$too_old)
 		goto stop_password_processing;
 	}
 
-	# TODO: Continue this tomorrow.
+	$salt = fmt_strgen(16);
+	$rounds = mt_rand(64,128);
 
-	print_r($_POST);
+	$last_hash = hash('sha256', $_POST['newpass'].$token['login'].$salt);
+
+	for($i = 0; $i < $rounds; $i++)
+		$last_hash = hash('sha256', $last_hash);
+
+	if(!store_pw_hash($token['user_id'], $last_hash, $salt, $rounds))
+	{
+		echo '<p style="color: #f00">Something went wrong when storing the new password. Please complain to an administrator.</p>';
+		goto stop_password_processing;
+	}
+
+	delete_pw_reset($_ARGS[1]);
+
+	# TODO: Link "log in" to the login page
+	echo '<p>Success! You should now be able to log in with your new password.</p>';
+
 	die();
 }
 

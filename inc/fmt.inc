@@ -45,4 +45,29 @@ function fmt_duration($secs, $short = false, $drop_secs = false)
 	return $str.$suffix;
 }
 
+function fmt_strgen($len = 8, $valid_regex = '/[a-z0-9]/i')
+{
+	$str = '';
+	$rejects = 0;
+	$gen_len = 0;
+
+	while($gen_len < $len)
+	{
+		$ch = chr(mt_rand(32, 127));
+
+		if(!preg_match($valid_regex, $ch))
+		{
+			if($rejects++ > ($len * 8))
+				die('Too many rejects trying to generate string of length '.$len.' with regex '.$valid_regex);
+
+			continue;
+		}
+
+		$str .= $ch;
+		$gen_len++;
+	}
+
+	return $str;
+}
+
 ?>
