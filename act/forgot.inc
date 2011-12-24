@@ -32,12 +32,9 @@ if(!empty($_POST['newpass']) and !$too_old)
 	$salt = fmt_strgen(16);
 	$rounds = mt_rand(64,128);
 
-	$last_hash = hash('sha256', $_POST['newpass'].$token['login'].$salt);
+	$hash = hash_password($token['login'], $_POST['newpass'], $salt, $rounds);
 
-	for($i = 0; $i < $rounds; $i++)
-		$last_hash = hash('sha256', $last_hash);
-
-	if(!store_pw_hash($token['user_id'], $last_hash, $salt, $rounds))
+	if(!store_pw_hash($token['user_id'], $hash, $salt, $rounds))
 	{
 		echo '<p style="color: #f00">Something went wrong when storing the new password. Please complain to an administrator.</p>';
 		goto stop_password_processing;

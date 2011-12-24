@@ -30,6 +30,48 @@ function simulate_query($query, $params)
 	return $query;
 }
 
+function hash_password($login, $pass, $salt, $rounds)
+{
+	$login = strtolower($login);
+
+	$last_hash = hash('sha256', $pass.$login.$salt);
+
+	for($i = 0; $i < $rounds; $i++)
+		$last_hash = hash('sha256', $last_hash);
+
+	return $last_hash;
+}
+
+function verify_login($login, $pass)
+{
+	global $dbh;
+
+	$sth = $dbh->prepare('SELECT `h`.`user_id`, `h`.`salt`, `h`.`rounds`
+		FROM `users` AS `u`
+		LEFT JOIN `hashes` AS `h`
+			ON `h`.`user_id` = `u`.`id`
+		WHERE `u`.`login` = ?');
+	$sth->execute(array($login));
+	$hash = $sth->fetch(PDO::FETCH_ASSOC);
+	$sth->closecursor();
+
+	if(empty($hash) or empty($hash['user_id']))
+		return false;
+
+	$test_hash = hash_password($login, $pass, $hash['salt'], $hash['rounds']);
+
+	$sth = $dbh->prepare('SELECT `user_id` FROM `hashes`
+		WHERE `user_id` = ? AND `hash` = ?');
+	$sth->execute(array($hash['user_id'], $test_hash));
+	$row = $sth->fetch(PDO::FETCH_ASSOC);
+	$sth->closecursor();
+
+	if(empty($row) or empty($row['user_id']))
+		return false;
+
+	return true;
+}
+
 function fetch_pw_reset($token)
 {
 	global $dbh;
@@ -82,4 +124,63 @@ function delete_pw_reset($token)
 	return ($count > 0);
 }
 
+function fetch_client_pubkey($login)
+{
+	global $dbh;
+
+	$sth = $dbh->prepare('SELECT `k`.`pubkey`, `k`.`generated` FROM `users` AS `u`
+		LEFT JOIN `client_keys` AS `k`
+			ON `k`.`owner_id` = `u`.`id`
+		WHERE `u`.`login` = ?');
+	$sth->execute(array($login));
+
+	$row = $sth->fetch(PDO::FETCH_ASSOC);
+	$sth->closecursor();
+
+	return $row;
+}
+
+function fetch_client_privkey($login)
+{
+	global $dbh;
+
+	$sth = $dbh->prepare('SELECT `k`.`privkey`, `k`.`generated` FROM `users` AS `u`
+		LEFT JOIN `client_keys` AS `k`
+			ON `k`.`owner_id` = `u`.`id`
+		WHERE `u`.`login` = ?');
+	$sth->execute(array($login));
+
+	$row = $sth->fetch(PDO::FETCH_ASSOC);
+	$sth->closecursor();
+
+	return $row;
+}
+
+function fetch_server_pubkey($sname)
+{
+	global $dbh;
+
+	$sth = $dbh->prepare('SELECT `pubkey`, `generated` FROM `server_keys`
+		WHERE `server_name` = ?');
+	$sth->execute(array($sname));
+
+	$row = $sth->fetch(PDO::FETCH_ASSOC);
+	$sth->closecursor();
+
+	return $row;
+}
+
+function fetch_server_privkey($sname, $secret)
+{
+	global $dbh;
+
+	$sth = $dbh->prepare('SELECT `privkey`, `generated` FROM `server_keys`
+		WHERE `server_name` = ? AND `token` = ?');
+	$sth->execute(array($sname, $secret));
+
+	$row = $sth->fetch(PDO::FETCH_ASSOC);
+	$sth->closecursor();
+
+	return $row;
+}
 ?>
