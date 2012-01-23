@@ -170,13 +170,13 @@ function fetch_server_pubkey($sname)
 	return $row;
 }
 
-function fetch_server_privkey($sname, $secret)
+function fetch_server_privkey($secret)
 {
 	global $dbh;
 
-	$sth = $dbh->prepare('SELECT `privkey`, `generated` FROM `server_keys`
-		WHERE `server_name` = ? AND `token` = ?');
-	$sth->execute(array($sname, $secret));
+	$sth = $dbh->prepare('SELECT `server_name`, `privkey`, `generated` FROM `server_keys`
+		WHERE `token` = ?');
+	$sth->execute(array($secret));
 
 	$row = $sth->fetch(PDO::FETCH_ASSOC);
 	$sth->closecursor();

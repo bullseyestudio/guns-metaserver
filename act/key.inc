@@ -26,6 +26,7 @@ if(stripos($_ARGS[2], 'private') !== false)
 else
 	$identifier = $_ARGS[2];
 
+
 $check_time = 0;
 if(!empty($_HEAD['If-Modified-Since']))
 	$check_time = strtotime($_HEAD['If-Modified-Since']);
@@ -45,10 +46,7 @@ elseif($client_key and $private_key)
 elseif(!$client_key and !$private_key)
 	$key = fetch_server_pubkey($identifier);
 elseif(!$client_key and $private_key)
-{
-	$key = fetch_server_privkey($identifier, $_ARGS[4]);
-	$identifier .= '/'.$_ARGS[4];
-}
+	$key = fetch_server_privkey($identifier);
 else
 {
 	header('HTTP/1.x 400 Bad Request');
@@ -73,7 +71,12 @@ header('HTTP/1.x 200 OK');
 header('Last-Modified: '.date('r', $key_generated));
 
 if($private_key)
+{
+	if(!$client_key)
+		header('X-Your-Server-Name: '.$key['server_name']);
+
 	print($key['privkey']);
+}
 else
 	print($key['pubkey']);
 
